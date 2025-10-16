@@ -12,25 +12,23 @@ const CashAdvanceView = ({ cashAdvanceId, onBack }) => {
 
   useEffect(() => {
     if (cashAdvanceId) {
-      fetchCashAdvanceRequest();
+      (async () => {
+        try {
+          setLoading(true);
+          setError(null);
+          console.log('Fetching cash advance request:', cashAdvanceId);
+          const response = await fetchCashAdvance(cashAdvanceId);
+          console.log('Cash advance response:', response.data);
+          setCashAdvance(response.data.data || response.data);
+        } catch (err) {
+          console.error('Error fetching cash advance request:', err);
+          setError('Failed to load cash advance request details. Please try again.');
+        } finally {
+          setLoading(false);
+        }
+      })();
     }
   }, [cashAdvanceId]);
-
-  const fetchCashAdvanceRequest = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      console.log('Fetching cash advance request:', cashAdvanceId);
-      const response = await fetchCashAdvance(cashAdvanceId);
-      console.log('Cash advance response:', response.data);
-      setCashAdvance(response.data.data || response.data);
-    } catch (err) {
-      console.error('Error fetching cash advance request:', err);
-      setError('Failed to load cash advance request details. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleDownloadPdf = async () => {
     try {
