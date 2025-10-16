@@ -4,6 +4,8 @@ import { Card, Button, Form, Modal, Collapse, Badge, Row, Col, Alert } from "rea
 import { motion, AnimatePresence } from "framer-motion";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { useAdvancedModalConfirmation } from '../hooks/useModalConfirmation';
+import '../styles/ModalConfirmation.css';
 import "bootstrap-icons/font/bootstrap-icons.css";
 import './EvaluationAdministration.css';
 
@@ -33,6 +35,35 @@ const EvaluationAdministration = () => {
   const [hasShownEmptyMessage, setHasShownEmptyMessage] = useState(false);
   const [filterStatus, setFilterStatus] = useState('All');
   const hasFetchedRef = useRef(false);
+
+  // Modal confirmation hook
+  const evaluationModalConfirmation = useAdvancedModalConfirmation(
+    'Evaluation Form',
+    () => {
+      setShowModal(false);
+      setCurrentForm({
+        id: null,
+        title: "",
+        description: "",
+        status: "Active",
+        questions: [
+          {
+            id: null,
+            category: "",
+            question_text: "",
+            description: "",
+          }
+        ],
+      });
+      setIsEditing(false);
+    },
+    null,
+    {
+      title: 'Confirm Close Evaluation Form',
+      message: 'Are you sure you want to close the evaluation form? Any unsaved changes will be lost.',
+      icon: '📝'
+    }
+  );
 
   // Predefined categories based on the form design
   const categories = [
@@ -551,7 +582,7 @@ const EvaluationAdministration = () => {
       )}
 
       {/* Modal for Add/Edit Evaluation Form */}
-      <Modal show={showModal} onHide={closeModal} centered size="lg">
+      <Modal show={showModal} onHide={evaluationModalConfirmation.handleCloseRequest} centered size="lg">
         <Modal.Header
           closeButton
           style={{
@@ -705,7 +736,7 @@ const EvaluationAdministration = () => {
             <Button
               variant="outline-secondary"
               className="rounded-pill px-3"
-              onClick={closeModal}
+              onClick={evaluationModalConfirmation.handleCloseRequest}
             >
               Cancel
             </Button>

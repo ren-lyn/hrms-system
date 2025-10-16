@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Form, Button, Alert } from 'react-bootstrap';
-import { ArrowLeft, Calendar, User, Building2, DollarSign } from 'lucide-react';
+import { Form, Button, Alert } from 'react-bootstrap';
 import axios from '../../axios';
 import './CashAdvanceForm.css';
 
@@ -19,49 +18,49 @@ const CashAdvanceForm = () => {
   const [alert, setAlert] = useState({ show: false, message: '', type: '' });
 
   useEffect(() => {
-    fetchEmployeeData();
-  }, []);
+    const loadEmployeeData = async () => {
+      try {
+        // Check cache first
+        const cachedData = localStorage.getItem('employeeProfile');
+        const cacheTime = localStorage.getItem('employeeProfileTime');
+        const now = Date.now();
+        const cacheAge = now - (cacheTime ? parseInt(cacheTime) : 0);
+        const isCacheValid = cacheAge < 5 * 60 * 1000; // 5 minutes
 
-  const fetchEmployeeData = async () => {
-    try {
-      // Check cache first
-      const cachedData = localStorage.getItem('employeeProfile');
-      const cacheTime = localStorage.getItem('employeeProfileTime');
-      const now = Date.now();
-      const cacheAge = now - (cacheTime ? parseInt(cacheTime) : 0);
-      const isCacheValid = cacheAge < 5 * 60 * 1000; // 5 minutes
-      
-      if (cachedData && isCacheValid) {
-        try {
-          const profileData = JSON.parse(cachedData);
-          const profile = profileData.profile;
-          
-          setFormData(prev => ({
-            ...prev,
-            company: 'Cabuyao Concrete Development Corporation',
-            name: profile.name || `${profile.first_name} ${profile.last_name}` || '',
-            department: profile.department || 'Not Specified',
-            dateField: new Date().toLocaleDateString('en-CA')
-          }));
-          
-          setLoading(false);
-          
-          // Still fetch fresh data in background
-          fetchFreshEmployeeData();
-          return;
-        } catch (e) {
-          console.error('Error parsing cached data:', e);
+        if (cachedData && isCacheValid) {
+          try {
+            const profileData = JSON.parse(cachedData);
+            const profile = profileData.profile;
+
+            setFormData(prev => ({
+              ...prev,
+              company: 'Cabuyao Concrete Development Corporation',
+              name: profile.name || `${profile.first_name} ${profile.last_name}` || '',
+              department: profile.department || 'Not Specified',
+              dateField: new Date().toLocaleDateString('en-CA')
+            }));
+
+            setLoading(false);
+
+            // Still fetch fresh data in background
+            fetchFreshEmployeeData();
+            return;
+          } catch (e) {
+            console.error('Error parsing cached data:', e);
+          }
         }
+
+        // Fetch fresh data
+        await fetchFreshEmployeeData();
+      } catch (error) {
+        console.error('Error fetching employee data:', error);
+        showAlert('Error loading employee information. Please try again.', 'danger');
+        setLoading(false);
       }
-      
-      // Fetch fresh data
-      await fetchFreshEmployeeData();
-    } catch (error) {
-      console.error('Error fetching employee data:', error);
-      showAlert('Error loading employee information. Please try again.', 'danger');
-      setLoading(false);
-    }
-  };
+    };
+
+    loadEmployeeData();
+  }, []);
 
   const fetchFreshEmployeeData = async () => {
     try {

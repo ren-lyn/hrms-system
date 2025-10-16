@@ -8,6 +8,8 @@ import 'jspdf-autotable';
 import Papa from 'papaparse';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { useAdvancedModalConfirmation } from '../../hooks/useModalConfirmation';
+import '../../styles/ModalConfirmation.css';
 import './EmployeeRecords.css'; // Import custom styles
 
 const EmployeeRecords = () => {
@@ -45,6 +47,74 @@ const EmployeeRecords = () => {
   // Field edit restrictions
   const [fieldEditCounts, setFieldEditCounts] = useState({});
   const [isFirstSave, setIsFirstSave] = useState(true);
+
+  // Modal confirmation hooks
+  const employeeModalConfirmation = useAdvancedModalConfirmation(
+    'Employee Form',
+    () => {
+      setShowModal(false);
+      setEditingEmployee(null);
+      setChangedFields([]);
+      setOriginalFormData({});
+      setFieldEditCounts({});
+      setIsFirstSave(true);
+      setFormData({
+        // Personal Information
+        email: '', password: '',
+        first_name: '', last_name: '', nickname: '',
+        civil_status: '', gender: '', place_of_birth: '', birth_date: '', age: '',
+        
+        // Contact Information
+        contact_number: '', emergency_contact_name: '', emergency_contact_phone: '',
+        
+        // Address Information
+        province: '', barangay: '', city: '', postal_code: '', present_address: '',
+        
+        // Employment Overview
+        position: '', role_id: '', department: '', employment_status: '',
+        tenurity: '', hire_date: '', salary: '', sss: '', philhealth: '', pagibig: '', tin_no: '',
+        
+        // Termination (optional)
+        termination_date: '', termination_reason: '', termination_remarks: '',
+      });
+    },
+    null,
+    {
+      title: 'Confirm Close Employee Form',
+      message: 'Are you sure you want to close the employee form? Any unsaved changes will be lost.',
+      icon: '⚠️'
+    }
+  );
+
+  const viewModalConfirmation = useAdvancedModalConfirmation(
+    'Employee Details',
+    () => {
+      setShowViewModal(false);
+      setViewingEmployee(null);
+    },
+    null,
+    {
+      title: 'Confirm Close Employee Details',
+      message: 'Are you sure you want to close the employee details view?',
+      icon: '👁️'
+    }
+  );
+
+  const evalModalConfirmation = useAdvancedModalConfirmation(
+    'Evaluation Results',
+    () => {
+      setShowEvalModal(false);
+      setEvalResults([]);
+      setSelectedEvalId(null);
+      setEvalDetail(null);
+    },
+    null,
+    {
+      title: 'Confirm Close Evaluation Results',
+      message: 'Are you sure you want to close the evaluation results?',
+      icon: '📊'
+    }
+  );
   
   // Define field categories for edit restrictions
   const nonEditableAfterSave = [
@@ -1240,7 +1310,7 @@ const EmployeeRecords = () => {
       )}
 
       {/* Evaluation Results Modal */}
-      <Modal show={showEvalModal} onHide={() => setShowEvalModal(false)} size="xl" className="employee-eval-modal">
+      <Modal show={showEvalModal} onHide={evalModalConfirmation.handleCloseRequest} size="xl" className="employee-eval-modal">
         <Modal.Header closeButton>
           <Modal.Title>Evaluation Result</Modal.Title>
         </Modal.Header>
@@ -1279,12 +1349,12 @@ const EmployeeRecords = () => {
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowEvalModal(false)}>Close</Button>
+          <Button variant="secondary" onClick={evalModalConfirmation.handleCloseRequest}>Close</Button>
         </Modal.Footer>
       </Modal>
 
       {/* Comprehensive Employee Form Modal */}
-      <Modal show={showModal} onHide={closeModal} size="xl" className="employee-form-modal">
+      <Modal show={showModal} onHide={employeeModalConfirmation.handleCloseRequest} size="xl" className="employee-form-modal">
         <Modal.Header closeButton>
           <Modal.Title>
             {editingEmployee ? 'Edit Employee' : 'Add New Employee'}
@@ -1815,7 +1885,7 @@ const EmployeeRecords = () => {
 
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={closeModal} disabled={isSaving}>Cancel</Button>
+            <Button variant="secondary" onClick={employeeModalConfirmation.handleCloseRequest} disabled={isSaving}>Cancel</Button>
             <Button variant="primary" type="submit" disabled={isSaving}>
               {isSaving 
                 ? 'Saving...' 
@@ -1831,7 +1901,7 @@ const EmployeeRecords = () => {
       </Modal>
 
       {/* View Employee Record Modal */}
-      <Modal show={showViewModal} onHide={closeViewModal} size="lg" className="employee-view-modal">
+      <Modal show={showViewModal} onHide={viewModalConfirmation.handleCloseRequest} size="lg" className="employee-view-modal">
         <Modal.Header closeButton>
           <Modal.Title>
             {viewingEmployee?.employee_profile?.first_name} {viewingEmployee?.employee_profile?.last_name}
