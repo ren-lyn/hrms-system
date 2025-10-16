@@ -37,6 +37,44 @@ const EmbeddedLeaveForm = () => {
   const [remainingLeaves, setRemainingLeaves] = useState(3);
   const [paidLeaveStatus, setPaidLeaveStatus] = useState({ hasPaidLeave: true, paidLeavesUsed: 0 });
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [leaveLimits, setLeaveLimits] = useState({});
+  const [limitsLoading, setLimitsLoading] = useState(true);
+
+  // Load leave limits (now using hardcoded values since Leave Settings was removed)
+  const loadLeaveLimits = async () => {
+    try {
+      setLimitsLoading(true);
+      console.log('Loading leave limits...');
+      
+      // Use hardcoded limits since Leave Settings feature was removed
+      setLeaveLimits({
+        'Sick Leave': { maxDaysPerMonth: 2, maxPaidRequestsPerYear: 1, isCustom: false },
+        'Vacation Leave': { maxDaysPerMonth: 2, maxPaidRequestsPerYear: 1, isCustom: false },
+        'Emergency Leave': { maxDaysPerMonth: 2, maxPaidRequestsPerYear: 0, isCustom: false },
+        'Maternity Leave – 105 days': { maxDaysPerMonth: 15, maxPaidRequestsPerYear: 1, isCustom: false },
+        'Paternity Leave – 7 days': { maxDaysPerMonth: 7, maxPaidRequestsPerYear: 1, isCustom: false },
+        'Leave for Victims of Violence Against Women and Their Children (VAWC) – 10 days': { maxDaysPerMonth: 10, maxPaidRequestsPerYear: 1, isCustom: false },
+        'Parental Leave – 7 days': { maxDaysPerMonth: 7, maxPaidRequestsPerYear: 1, isCustom: false },
+        'Women\'s Special Leave – 60 days': { maxDaysPerMonth: 10, maxPaidRequestsPerYear: 1, isCustom: false }
+      });
+      console.log('Leave limits loaded (hardcoded)');
+    } catch (error) {
+      console.error('Error loading leave limits:', error);
+      // Use fallback limits if anything fails
+      setLeaveLimits({
+        'Sick Leave': { maxDaysPerMonth: 2, maxPaidRequestsPerYear: 1, isCustom: false },
+        'Vacation Leave': { maxDaysPerMonth: 2, maxPaidRequestsPerYear: 1, isCustom: false },
+        'Emergency Leave': { maxDaysPerMonth: 2, maxPaidRequestsPerYear: 0, isCustom: false },
+        'Maternity Leave – 105 days': { maxDaysPerMonth: 15, maxPaidRequestsPerYear: 1, isCustom: false },
+        'Paternity Leave – 7 days': { maxDaysPerMonth: 7, maxPaidRequestsPerYear: 1, isCustom: false },
+        'Leave for Victims of Violence Against Women and Their Children (VAWC) – 10 days': { maxDaysPerMonth: 10, maxPaidRequestsPerYear: 1, isCustom: false },
+        'Parental Leave – 7 days': { maxDaysPerMonth: 7, maxPaidRequestsPerYear: 1, isCustom: false },
+        'Women\'s Special Leave – 60 days': { maxDaysPerMonth: 10, maxPaidRequestsPerYear: 1, isCustom: false }
+      });
+    } finally {
+      setLimitsLoading(false);
+    }
+  };
 
   // Load employee data function (optimized with caching)
   const loadEmployeeData = async () => {
@@ -168,7 +206,9 @@ const EmbeddedLeaveForm = () => {
   useEffect(() => {
     loadEmployeeData();
     loadLeaveData();
+    loadLeaveLimits(); // Load dynamic leave limits from HR settings
   }, [loadEmployeeData, loadLeaveData]);
+
 
   // Monitor leaveRequests changes
   useEffect(() => {
@@ -269,19 +309,61 @@ const EmbeddedLeaveForm = () => {
     return { hasPaidLeave, paidLeavesUsed };
   };
 
-  // Get maximum allowed days for each leave type
+  // Get maximum allowed days for each leave type from HR settings (monthly limits)
   const getMaxDaysForLeaveType = (leaveType) => {
-    const leaveLimits = {
-      'Sick Leave': 5,
-      'Vacation Leave': 5,
-      'Emergency Leave': 5,
-      'Maternity Leave – 105 days': 105,
+    if (limitsLoading) {
+      return 0; // Return 0 while loading to prevent validation errors
+    }
+    
+    const limit = leaveLimits[leaveType];
+    if (limit && limit.maxDaysPerMonth) {
+      return limit.maxDaysPerMonth;
+    }
+    
+    // Fallback to default values if not found
+    const fallbackLimits = {
+      'Sick Leave': 2,
+      'Vacation Leave': 2,
+      'Emergency Leave': 2,
+      'Maternity Leave – 105 days': 15,
       'Paternity Leave – 7 days': 7,
       'Leave for Victims of Violence Against Women and Their Children (VAWC) – 10 days': 10,
       'Parental Leave – 7 days': 7,
-      'Women\'s Special Leave – 60 days': 60
+      'Women\'s Special Leave – 60 days': 10
     };
-    return leaveLimits[leaveType] || 0;
+    return fallbackLimits[leaveType] || 0;
+  };
+
+  // Get user-friendly leave type information
+  const getLeaveTypeInfo = (leaveType) => {
+    const limit = leaveLimits[leaveType];
+    if (limit) {
+      return {
+        maxDaysPerMonth: limit.maxDaysPerMonth,
+        maxPaidRequestsPerYear: limit.maxPaidRequestsPerYear,
+        description: limit.description || ''
+      };
+    }
+    return {
+      maxDaysPerMonth: getMaxDaysForLeaveType(leaveType),
+      maxPaidRequestsPerYear: 1,
+      description: ''
+    };
+  };
+
+  // Get user-friendly leave type name (remove technical details)
+  const getLeaveTypeDisplayName = (leaveType) => {
+    const displayNames = {
+      'Sick Leave': 'Sick Leave',
+      'Vacation Leave': 'Vacation Leave',
+      'Emergency Leave': 'Emergency Leave',
+      'Maternity Leave – 105 days': 'Maternity Leave',
+      'Paternity Leave – 7 days': 'Paternity Leave',
+      'Leave for Victims of Violence Against Women and Their Children (VAWC) – 10 days': 'VAWC Leave',
+      'Parental Leave – 7 days': 'Parental Leave',
+      'Women\'s Special Leave – 60 days': 'Women\'s Special Leave'
+    };
+    return displayNames[leaveType] || leaveType;
   };
 
   
@@ -414,10 +496,11 @@ const EmbeddedLeaveForm = () => {
       return;
     }
     
-    // Check if total days exceed the limit for the selected leave type
+    // Check if total days exceed the limit for the selected leave type (monthly limit)
     const maxDays = getMaxDaysForLeaveType(formData.leaveType);
     if (formData.totalDays > maxDays) {
-      showAlert(`You can only file up to ${maxDays} days for ${formData.leaveType.split(' – ')[0]}.`, 'warning');
+      const leaveTypeName = getLeaveTypeDisplayName(formData.leaveType);
+      showAlert(`Sorry, you can only request up to ${maxDays} ${maxDays === 1 ? 'day' : 'days'} per month for ${leaveTypeName}. Please adjust your request or contact HR if you need more days.`, 'warning');
       return;
     }
     
@@ -899,6 +982,24 @@ const EmbeddedLeaveForm = () => {
                       <option value="Parental Leave – 7 days">Parental Leave</option>
                       <option value="Women's Special Leave – 60 days">Women's Special Leave</option>
                     </Form.Select>
+                    
+                    {/* Show current limits for selected leave type */}
+                    {formData.leaveType && !limitsLoading && (
+                      <div className="mt-2 p-2 bg-light rounded">
+                        <small className="text-muted">
+                          <strong>{getLeaveTypeDisplayName(formData.leaveType)} Limits:</strong>
+                          {getLeaveTypeInfo(formData.leaveType).isCustom && (
+                            <span className="badge bg-warning ms-2">Custom</span>
+                          )}
+                          <br/>
+                          • Maximum: {getMaxDaysForLeaveType(formData.leaveType)} day{getMaxDaysForLeaveType(formData.leaveType) !== 1 ? 's' : ''} per month<br/>
+                          • Paid requests: {getLeaveTypeInfo(formData.leaveType).maxPaidRequestsPerYear} per year
+                          {getLeaveTypeInfo(formData.leaveType).isCustom && (
+                            <><br/><span className="text-info">• You have custom limits set by HR</span></>
+                          )}
+                        </small>
+                      </div>
+                    )}
                   </Form.Group>
                 </div>
               </div>
@@ -1133,11 +1234,12 @@ const EmbeddedLeaveForm = () => {
         <Modal.Body>
           <p>Are you sure you want to submit this leave request?</p>
           <div className="confirmation-details">
-            <p><strong>Leave Type:</strong> {formData.leaveType}</p>
+            <p><strong>Leave Type:</strong> {getLeaveTypeDisplayName(formData.leaveType)}</p>
             <p><strong>Start Date:</strong> {formData.startDate ? formData.startDate.toLocaleDateString() : 'Not selected'}</p>
             <p><strong>End Date:</strong> {formData.endDate ? formData.endDate.toLocaleDateString() : 'Not selected'}</p>
             <p><strong>Total Days:</strong> {formData.totalDays} day{formData.totalDays !== 1 ? 's' : ''}</p>
             <p><strong>Reason:</strong> {formData.reason || 'Not provided'}</p>
+            <p><strong>Monthly Limit:</strong> {getMaxDaysForLeaveType(formData.leaveType)} day{getMaxDaysForLeaveType(formData.leaveType) !== 1 ? 's' : ''} per month</p>
           </div>
         </Modal.Body>
         <Modal.Footer>

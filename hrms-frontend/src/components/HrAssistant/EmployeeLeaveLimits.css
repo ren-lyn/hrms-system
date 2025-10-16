@@ -1,0 +1,277 @@
+.employee-leave-limits {
+  padding: 20px;
+}
+
+.employee-leave-limits .card {
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.employee-leave-limits .card-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+}
+
+.employee-leave-limits .table {
+  margin-bottom: 0;
+}
+
+.employee-leave-limits .table th {
+  background-color: #f8f9fa;
+  border-top: none;
+  font-weight: 600;
+  color: #495057;
+}
+
+.employee-leave-limits .badge {
+  font-size: 0.75rem;
+  padding: 0.375rem 0.75rem;
+}
+
+.employee-leave-limits .btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+.employee-leave-limits .modal-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+}
+
+.employee-leave-limits .modal-header .btn-close {
+  filter: invert(1);
+}
+
+.employee-leave-limits .form-control:focus,
+.employee-leave-limits .form-select:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.employee-leave-limits .btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+}
+
+.employee-leave-limits .btn-primary:hover {
+  background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+  transform: translateY(-1px);
+}
+
+.employee-leave-limits .btn-outline-primary {
+  color: #667eea;
+  border-color: #667eea;
+}
+
+.employee-leave-limits .btn-outline-primary:hover {
+  background-color: #667eea;
+  border-color: #667eea;
+}
+
+.employee-leave-limits .spinner-border {
+  color: #667eea;
+}
+
+.employee-leave-limits .text-muted {
+  color: #6c757d !important;
+}
+
+.employee-leave-limits .table tbody tr:hover {
+  background-color: rgba(102, 126, 234, 0.05);
+}
+
+.employee-leave-limits .input-group-text {
+  background-color: #f8f9fa;
+  border-color: #ced4da;
+}
+
+.employee-leave-limits .alert {
+  border: none;
+  border-radius: 8px;
+}
+
+.employee-leave-limits .alert-success {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.employee-leave-limits .alert-danger {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.employee-leave-limits .alert-warning {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+/* Searchable dropdown styles */
+.employee-leave-limits .position-relative {
+  position: relative;
+}
+
+.employee-leave-limits .dropdown-item {
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid #e9ecef;
+  transition: background-color 0.2s ease;
+}
+
+.employee-leave-limits .dropdown-item:hover {
+  background-color: #f8f9fa;
+}
+
+.employee-leave-limits .dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.employee-leave-limits .search-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #ced4da;
+  border-radius: 0.375rem;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  max-height: 200px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #ced4da #f8f9fa;
+}
+
+.employee-leave-limits .search-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+.employee-leave-limits .search-dropdown::-webkit-scrollbar-track {
+  background: #f8f9fa;
+  border-radius: 3px;
+}
+
+.employee-leave-limits .search-dropdown::-webkit-scrollbar-thumb {
+  background: #ced4da;
+  border-radius: 3px;
+}
+
+.employee-leave-limits .search-dropdown::-webkit-scrollbar-thumb:hover {
+  background: #adb5bd;
+}
+
+.employee-leave-limits .search-dropdown-item {
+  padding: 0.75rem;
+  cursor: pointer;
+  border-bottom: 1px solid #e9ecef;
+  transition: background-color 0.2s ease;
+}
+
+.employee-leave-limits .search-dropdown-item:hover {
+  background-color: #f8f9fa;
+}
+
+.employee-leave-limits .search-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.employee-leave-limits .search-dropdown-item .employee-name {
+  font-weight: 600;
+  color: #212529;
+}
+
+.employee-leave-limits .search-dropdown-item .employee-details {
+  font-size: 0.875rem;
+  color: #6c757d;
+  margin-top: 0.25rem;
+}
+
+.employee-leave-limits .select-all-option {
+  background-color: #e3f2fd !important;
+  border-bottom: 2px solid #2196f3 !important;
+  font-weight: bold;
+}
+
+.employee-leave-limits .select-all-option:hover {
+  background-color: #bbdefb !important;
+}
+
+.employee-leave-limits .select-all-option .employee-name {
+  color: #1976d2;
+}
+
+.employee-leave-limits .select-all-option .employee-details {
+  color: #1565c0;
+  font-style: italic;
+}
+
+/* Checkbox styling */
+.employee-leave-limits .select-all-checkbox-container {
+  padding: 0.75rem;
+  border-bottom: 1px solid #e9ecef;
+  background-color: #f8f9fa;
+}
+
+.employee-leave-limits .select-all-checkbox-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  margin: 0;
+  font-weight: 600;
+}
+
+.employee-leave-limits .select-all-text {
+  margin-left: 0.5rem;
+  color: #495057;
+}
+
+.employee-leave-limits .employee-checkbox-container {
+  padding: 0.75rem;
+  border-bottom: 1px solid #e9ecef;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.employee-leave-limits .employee-checkbox-container:hover {
+  background-color: #f8f9fa;
+}
+
+.employee-leave-limits .employee-checkbox-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  margin: 0;
+  width: 100%;
+}
+
+.employee-leave-limits .employee-checkbox {
+  margin-right: 0.5rem;
+  cursor: pointer;
+}
+
+.employee-leave-limits .employee-checkbox-label .employee-name {
+  font-weight: 500;
+  color: #212529;
+  margin-right: 0.25rem;
+}
+
+.employee-leave-limits .employee-checkbox-label .employee-department {
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .employee-leave-limits {
+    padding: 10px;
+  }
+  
+  .employee-leave-limits .table {
+    font-size: 0.875rem;
+  }
+  
+  .employee-leave-limits .btn-sm {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.8rem;
+  }
+}

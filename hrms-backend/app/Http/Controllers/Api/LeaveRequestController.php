@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\LeaveRequest;
+use App\Models\EmployeeLeaveLimit;
 use App\Models\User;
 use App\Models\EmployeeProfile;
 use App\Models\HrCalendarEvent;
@@ -562,51 +563,71 @@ class LeaveRequestController extends Controller
     }
 
     /**
-     * Get leave entitlement for a specific leave type
+     * Get leave entitlement for a specific employee and leave type (monthly limit)
+     * Checks individual employee limits first, then falls back to config file limits
      */
-    private function getLeaveEntitlement($leaveType)
+    private function getLeaveEntitlement($employeeId, $leaveType)
     {
+        // First check if employee has individual limits
+        $employeeLimit = EmployeeLeaveLimit::getEffectiveLimit($employeeId, $leaveType);
+        if ($employeeLimit) {
+            return $employeeLimit->max_days_per_month;
+        }
+        
+        // Fallback to config file (convert yearly to monthly)
         $entitlements = config('leave.entitlements');
-        return $entitlements[$leaveType] ?? 0;
+        $yearlyLimit = $entitlements[$leaveType] ?? 0;
+        return ceil($yearlyLimit / 12); // Convert yearly to monthly
     }
 
     /**
-     * Check if employee has sufficient leave balance for the request
+     * Check if employee has sufficient leave balance for the request (monthly check)
      */
     private function checkLeaveBalance($employeeId, $leaveType, $requestedDays)
     {
+        $currentMonth = now()->month;
         $currentYear = now()->year;
-        $entitled = $this->getLeaveEntitlement($leaveType);
+        $entitled = $this->getLeaveEntitlement($employeeId, $leaveType);
         
         $usedDays = LeaveRequest::where('employee_id', $employeeId)
             ->where('status', 'approved')
             ->where('type', $leaveType)
+            ->whereMonth('from', $currentMonth)
             ->whereYear('from', $currentYear)
             ->sum('total_days');
             
         $remaining = $entitled - $usedDays;
         
         if ($requestedDays > $remaining) {
-            return "Insufficient {$leaveType} balance. You have {$remaining} days remaining out of {$entitled} entitled days.";
+            return "Insufficient {$leaveType} balance. You have {$remaining} days remaining out of {$entitled} entitled days this month.";
         }
         
         return null; // No balance issues
     }
 
     /**
-     * Check if the requested days exceed the maximum allowed for a single request of this leave type
+     * Check if the requested days exceed the maximum allowed for a single request of this leave type (monthly limit)
+     * Checks individual employee limits first, then falls back to config file limits
      */
-    private function checkLeaveTypeLimit($leaveType, $requestedDays)
+    private function checkLeaveTypeLimit($employeeId, $leaveType, $requestedDays)
     {
-        $entitlements = config('leave.entitlements');
-        $maxAllowedDays = $entitlements[$leaveType] ?? 0;
+        // First check if employee has individual limits
+        $employeeLimit = EmployeeLeaveLimit::getEffectiveLimit($employeeId, $leaveType);
+        if ($employeeLimit) {
+            $maxAllowedDays = $employeeLimit->max_days_per_month;
+        } else {
+            // Fallback to config file (convert yearly to monthly)
+            $entitlements = config('leave.entitlements');
+            $yearlyLimit = $entitlements[$leaveType] ?? 0;
+            $maxAllowedDays = ceil($yearlyLimit / 12);
+        }
         
         if ($maxAllowedDays === 0) {
             return "Invalid leave type: {$leaveType}";
         }
         
         if ($requestedDays > $maxAllowedDays) {
-            return "You can only file up to {$maxAllowedDays} days for {$leaveType}.";
+            return "You can only file up to {$maxAllowedDays} days per month for {$leaveType}.";
         }
         
         return null; // No limit violation
@@ -653,7 +674,7 @@ class LeaveRequestController extends Controller
         
         // Rule 3: Check if requested days exceed the maximum allowed for the leave type (check first)
         if ($leaveType && $requestedDays > 0) {
-            $leaveTypeLimitError = $this->checkLeaveTypeLimit($leaveType, $requestedDays);
+            $leaveTypeLimitError = $this->checkLeaveTypeLimit($employeeId, $leaveType, $requestedDays);
             if ($leaveTypeLimitError) {
                 return $leaveTypeLimitError;
             }
@@ -677,18 +698,35 @@ class LeaveRequestController extends Controller
     /**
      * Get available leave types with their entitlements and settings
      */
-    public function getLeaveTypes()
+    public function getLeaveTypes(Request $request)
     {
+        $employeeId = $request->get('employee_id'); // Optional employee ID to get personalized limits
+        
+        // Get from config file
         $entitlements = config('leave.entitlements');
         $settings = config('leave.settings');
         
         $leaveTypes = [];
         
         foreach ($entitlements as $leaveType => $entitledDays) {
+            $entitledDaysMonthly = ceil($entitledDays / 12); // Convert yearly to monthly
+            $maxPaidRequests = 1; // Default value
+            
+            // If employee ID is provided, check for individual limits
+            if ($employeeId) {
+                $employeeLimit = EmployeeLeaveLimit::getEffectiveLimit($employeeId, $leaveType);
+                if ($employeeLimit) {
+                    $entitledDaysMonthly = $employeeLimit->max_days_per_month;
+                    $maxPaidRequests = $employeeLimit->max_paid_requests_per_year;
+                }
+            }
+            
             $leaveTypes[] = [
                 'type' => $leaveType,
-                'entitled_days' => $entitledDays,
-                'settings' => $settings[$leaveType] ?? []
+                'entitled_days' => $entitledDaysMonthly,
+                'max_paid_requests' => $maxPaidRequests,
+                'settings' => $settings[$leaveType] ?? [],
+                'is_custom' => $employeeId && $employeeLimit ? true : false
             ];
         }
         

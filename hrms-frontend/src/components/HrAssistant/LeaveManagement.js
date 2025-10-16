@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Row, Col, Card, Table, Button, Badge, Form, InputGroup, Modal, Alert, Nav, Tab } from 'react-bootstrap';
-import { Search, Calendar, Download, Eye, Check, X, FileText, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Search, Calendar, Download, Eye, Check, X, FileText, Clock, CheckCircle, XCircle, Users } from 'lucide-react';
 import { fetchLeaveRequests, getLeaveStats, approveLeaveRequest, confirmManagerRejection, updateLeaveTermsAndCategory, getLeaveRequest } from '../../api/leave';
 import jsPDF from 'jspdf';
 import axios from '../../axios';
 import { useDebounce } from '../../utils/debounce';
+import EmployeeLeaveLimits from './EmployeeLeaveLimits';
 import './LeaveManagement.css';
 
 const LeaveManagement = () => {
@@ -764,147 +765,149 @@ const LeaveManagement = () => {
         </Alert>
       )}
 
-      {/* Stats Cards */}
-      <Row className="mb-4">
-        <Col md={6}>
-          <Card className="stats-card">
-            <Card.Body>
-              <div className="d-flex align-items-center mb-3">
-                <div className="stats-icon me-3">
-                  {activeTab === 'pending' ? <Clock size={20} /> : 
-                   activeTab === 'approved' ? <CheckCircle size={20} /> : 
-                   <XCircle size={20} />}
+      {/* Stats Cards - Only show for leave request tabs, not for Employee Limits */}
+      {activeTab !== 'employee-limits' && (
+        <Row className="mb-4">
+          <Col md={6}>
+            <Card className="stats-card">
+              <Card.Body>
+                <div className="d-flex align-items-center mb-3">
+                  <div className="stats-icon me-3">
+                    {activeTab === 'pending' ? <Clock size={20} /> : 
+                     activeTab === 'approved' ? <CheckCircle size={20} /> : 
+                     <XCircle size={20} />}
+                  </div>
+                  <h6 className="mb-0">
+                    {activeTab === 'pending' ? 'Pending Requests' : 
+                     activeTab === 'approved' ? 'Approved Requests' : 
+                     'Rejected Requests'}
+                  </h6>
                 </div>
-                <h6 className="mb-0">
-                  {activeTab === 'pending' ? 'Pending Requests' : 
-                   activeTab === 'approved' ? 'Approved Requests' : 
-                   'Rejected Requests'}
-                </h6>
-              </div>
-              <Row className="text-center">
-                <Col>
-                  <div className="stat-item">
-                    <div className="stat-label">Total</div>
-                    <div className="stat-value">
-                      {activeTab === 'pending' ? 
-                        leaveRequests.filter(r => r.status === 'manager_approved' || r.status === 'manager_rejected').length :
-                        activeTab === 'approved' ? 
-                        leaveRequests.filter(r => r.status === 'approved').length :
-                        leaveRequests.filter(r => r.status === 'rejected').length}
-                    </div>
-                  </div>
-                </Col>
-                <Col>
-                  <div className="stat-item">
-                    <div className="stat-label">This Month</div>
-                    <div className="stat-value">
-                      {(() => {
-                        const currentMonth = new Date().getMonth();
-                        const currentYear = new Date().getFullYear();
-                        return leaveRequests.filter(r => {
-                          const requestDate = new Date(r.created_at);
-                          const matchesTab = activeTab === 'pending' ? 
-                            (r.status === 'manager_approved' || r.status === 'manager_rejected') :
-                            activeTab === 'approved' ? r.status === 'approved' : r.status === 'rejected';
-                          return matchesTab && requestDate.getMonth() === currentMonth && requestDate.getFullYear() === currentYear;
-                        }).length;
-                      })()}
-                    </div>
-                  </div>
-                </Col>
-                <Col>
-                  <div className="stat-item">
-                    <div className="stat-label">This Week</div>
-                    <div className="stat-value">
-                      {(() => {
-                        const now = new Date();
-                        const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
-                        const endOfWeek = new Date(now.setDate(now.getDate() - now.getDay() + 6));
-                        return leaveRequests.filter(r => {
-                          const requestDate = new Date(r.created_at);
-                          const matchesTab = activeTab === 'pending' ? 
-                            (r.status === 'manager_approved' || r.status === 'manager_rejected') :
-                            activeTab === 'approved' ? r.status === 'approved' : r.status === 'rejected';
-                          return matchesTab && requestDate >= startOfWeek && requestDate <= endOfWeek;
-                        }).length;
-                      })()}
-                    </div>
-                  </div>
-                </Col>
-                <Col>
-                  <div className="stat-item">
-                    <div className="stat-label">Today</div>
-                    <div className="stat-value">
-                      {(() => {
-                        const today = new Date().toDateString();
-                        return leaveRequests.filter(r => {
-                          const requestDate = new Date(r.created_at).toDateString();
-                          const matchesTab = activeTab === 'pending' ? 
-                            (r.status === 'manager_approved' || r.status === 'manager_rejected') :
-                            activeTab === 'approved' ? r.status === 'approved' : r.status === 'rejected';
-                          return matchesTab && requestDate === today;
-                        }).length;
-                      })()}
-                    </div>
-                  </div>
-                </Col>
-              </Row>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={6}>
-          <Card className="stats-card">
-            <Card.Body>
-              <h6 className="mb-3">
-                {activeTab === 'pending' ? 'Pending by Leave Type' : 
-                 activeTab === 'approved' ? 'Approved by Leave Type' : 
-                 'Rejected by Leave Type'}
-              </h6>
-              <div className="leave-types" style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                {(() => {
-                  const filteredRequests = leaveRequests.filter(r => {
-                    if (activeTab === 'pending') return r.status === 'manager_approved' || r.status === 'manager_rejected';
-                    if (activeTab === 'approved') return r.status === 'approved';
-                    if (activeTab === 'rejected') return r.status === 'rejected';
-                    return false;
-                  });
-                  
-                  const typeCounts = {};
-                  filteredRequests.forEach(request => {
-                    const type = request.type || 'Unknown';
-                    typeCounts[type] = (typeCounts[type] || 0) + 1;
-                  });
-                  
-                  const total = filteredRequests.length;
-                  
-                  return Object.entries(typeCounts).map(([type, count]) => (
-                    <div key={type} className="leave-type-item d-flex justify-content-between align-items-center mb-2">
-                      <span>{type}</span>
-                      <div className="d-flex align-items-center">
-                        <div className="progress-bar me-2" style={{width: '100px', height: '4px', backgroundColor: '#e9ecef'}}>
-                          <div 
-                            className="progress-fill" 
-                            style={{
-                              width: `${total > 0 ? (count / total) * 100 : 0}%`,
-                              height: '100%',
-                              backgroundColor: activeTab === 'pending' ? '#ffc107' : 
-                                            activeTab === 'approved' ? '#198754' : '#dc3545'
-                            }}
-                          ></div>
-                        </div>
-                        <Badge bg={activeTab === 'pending' ? 'warning' : 
-                                   activeTab === 'approved' ? 'success' : 'danger'}>
-                          {count}
-                        </Badge>
+                <Row className="text-center">
+                  <Col>
+                    <div className="stat-item">
+                      <div className="stat-label">Total</div>
+                      <div className="stat-value">
+                        {activeTab === 'pending' ? 
+                          leaveRequests.filter(r => r.status === 'manager_approved' || r.status === 'manager_rejected').length :
+                          activeTab === 'approved' ? 
+                          leaveRequests.filter(r => r.status === 'approved').length :
+                          leaveRequests.filter(r => r.status === 'rejected').length}
                       </div>
                     </div>
-                  ));
-                })()}
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+                  </Col>
+                  <Col>
+                    <div className="stat-item">
+                      <div className="stat-label">This Month</div>
+                      <div className="stat-value">
+                        {(() => {
+                          const currentMonth = new Date().getMonth();
+                          const currentYear = new Date().getFullYear();
+                          return leaveRequests.filter(r => {
+                            const requestDate = new Date(r.created_at);
+                            const matchesTab = activeTab === 'pending' ? 
+                              (r.status === 'manager_approved' || r.status === 'manager_rejected') :
+                              activeTab === 'approved' ? r.status === 'approved' : r.status === 'rejected';
+                            return matchesTab && requestDate.getMonth() === currentMonth && requestDate.getFullYear() === currentYear;
+                          }).length;
+                        })()}
+                      </div>
+                    </div>
+                  </Col>
+                  <Col>
+                    <div className="stat-item">
+                      <div className="stat-label">This Week</div>
+                      <div className="stat-value">
+                        {(() => {
+                          const now = new Date();
+                          const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+                          const endOfWeek = new Date(now.setDate(now.getDate() - now.getDay() + 6));
+                          return leaveRequests.filter(r => {
+                            const requestDate = new Date(r.created_at);
+                            const matchesTab = activeTab === 'pending' ? 
+                              (r.status === 'manager_approved' || r.status === 'manager_rejected') :
+                              activeTab === 'approved' ? r.status === 'approved' : r.status === 'rejected';
+                            return matchesTab && requestDate >= startOfWeek && requestDate <= endOfWeek;
+                          }).length;
+                        })()}
+                      </div>
+                    </div>
+                  </Col>
+                  <Col>
+                    <div className="stat-item">
+                      <div className="stat-label">Today</div>
+                      <div className="stat-value">
+                        {(() => {
+                          const today = new Date().toDateString();
+                          return leaveRequests.filter(r => {
+                            const requestDate = new Date(r.created_at).toDateString();
+                            const matchesTab = activeTab === 'pending' ? 
+                              (r.status === 'manager_approved' || r.status === 'manager_rejected') :
+                              activeTab === 'approved' ? r.status === 'approved' : r.status === 'rejected';
+                            return matchesTab && requestDate === today;
+                          }).length;
+                        })()}
+                      </div>
+                    </div>
+                  </Col>
+                </Row>
+              </Card.Body>
+            </Card>
+          </Col>
+          <Col md={6}>
+            <Card className="stats-card">
+              <Card.Body>
+                <h6 className="mb-3">
+                  {activeTab === 'pending' ? 'Pending by Leave Type' : 
+                   activeTab === 'approved' ? 'Approved by Leave Type' : 
+                   'Rejected by Leave Type'}
+                </h6>
+                <div className="leave-types" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                  {(() => {
+                    const filteredRequests = leaveRequests.filter(r => {
+                      if (activeTab === 'pending') return r.status === 'manager_approved' || r.status === 'manager_rejected';
+                      if (activeTab === 'approved') return r.status === 'approved';
+                      if (activeTab === 'rejected') return r.status === 'rejected';
+                      return false;
+                    });
+                    
+                    const typeCounts = {};
+                    filteredRequests.forEach(request => {
+                      const type = request.type || 'Unknown';
+                      typeCounts[type] = (typeCounts[type] || 0) + 1;
+                    });
+                    
+                    const total = filteredRequests.length;
+                    
+                    return Object.entries(typeCounts).map(([type, count]) => (
+                      <div key={type} className="leave-type-item d-flex justify-content-between align-items-center mb-2">
+                        <span>{type}</span>
+                        <div className="d-flex align-items-center">
+                          <div className="progress-bar me-2" style={{width: '100px', height: '4px', backgroundColor: '#e9ecef'}}>
+                            <div 
+                              className="progress-fill" 
+                              style={{
+                                width: `${total > 0 ? (count / total) * 100 : 0}%`,
+                                height: '100%',
+                                backgroundColor: activeTab === 'pending' ? '#ffc107' : 
+                                              activeTab === 'approved' ? '#198754' : '#dc3545'
+                              }}
+                            ></div>
+                          </div>
+                          <Badge bg={activeTab === 'pending' ? 'warning' : 
+                                     activeTab === 'approved' ? 'success' : 'danger'}>
+                            {count}
+                          </Badge>
+                        </div>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+      )}
 
       {/* Filters */}
       <Row className="mb-3">
@@ -1015,6 +1018,12 @@ const LeaveManagement = () => {
                   </Badge>
                 </Nav.Link>
               </Nav.Item>
+          <Nav.Item>
+            <Nav.Link eventKey="employee-limits" className="d-flex align-items-center">
+              <Users size={16} className="me-2" />
+              Employee Limits
+            </Nav.Link>
+          </Nav.Item>
             </Nav>
             
             <Tab.Content>
@@ -1371,6 +1380,11 @@ const LeaveManagement = () => {
                   </div>
                 )}
               </Tab.Pane>
+              
+          
+          <Tab.Pane eventKey="employee-limits">
+            <EmployeeLeaveLimits />
+          </Tab.Pane>
             </Tab.Content>
           </Tab.Container>
         </Card.Body>

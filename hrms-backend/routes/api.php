@@ -27,6 +27,7 @@ use App\Http\Controllers\Api\BenefitController;
 use App\Http\Controllers\Api\EmployeeTaxAssignmentController;
 use App\Http\Controllers\Api\EmployeeDeductionAssignmentController;
 use App\Http\Controllers\Api\AttendanceController;
+use App\Http\Controllers\Api\EmployeeLeaveLimitController;
 
 
 Route::middleware(['auth:sanctum', 'role:HR Assistant,HR Staff'])->group(function () {
@@ -472,6 +473,17 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/import/history', [AttendanceController::class, 'importHistory']); // Import history
         Route::get('/import/{id}', [AttendanceController::class, 'importDetails']); // Import details
         Route::delete('/import/{id}', [AttendanceController::class, 'deleteImport']); // Delete import record
+    });
+
+
+    // Employee Leave Limits Management Routes
+    Route::middleware(['role:HR Assistant,HR Staff'])->prefix('employee-leave-limits')->group(function () {
+        Route::get('/', [EmployeeLeaveLimitController::class, 'index']); // Get all employee leave limits
+        Route::post('/', [EmployeeLeaveLimitController::class, 'store']); // Create/update employee leave limit
+        Route::put('/{id}', [EmployeeLeaveLimitController::class, 'update']); // Update employee leave limit
+        Route::delete('/{id}', [EmployeeLeaveLimitController::class, 'destroy']); // Delete employee leave limit
+        Route::get('/employee/{employeeId}', [EmployeeLeaveLimitController::class, 'getEmployeeLimits']); // Get limits for specific employee
+        Route::get('/employees/dropdown', [EmployeeLeaveLimitController::class, 'getEmployees']); // Get employees for dropdown
     });
 });
 
